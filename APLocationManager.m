@@ -12,7 +12,6 @@
     NSUserDefaults *def;
     CLLocationManager *locationManager;
     CLGeocoder *geoCoder;
-    APLMmode mode;
     NSMutableArray *coordinateBlockStack;
     NSMutableArray *cityBlockStack;
 }
@@ -23,7 +22,7 @@
 @end
 
 @implementation APLocationManager
-@synthesize geopointLocationCacheTime;
+@synthesize cacheInterval;
 @synthesize enableCache;
 
 + (APLocationManager *)sharedInstance
@@ -42,8 +41,7 @@
 - (id)init
 {
     if (self = [super init]) {
-        mode = APLMcoordinate;//default mode is to retrieve coordinates only
-        self.geopointLocationCacheTime = 60*5;
+        self.cacheInterval = 60*5;
         self.enableCache = YES;
         
         def = [NSUserDefaults standardUserDefaults];
@@ -76,7 +74,6 @@
 - (void)getCoordinateWithBlock:(void (^)(NSDictionary *, NSError *))handler
 {
     if(APLM_DEBUG)NSLog(@"Coordinate requested");
-    mode = APLMcoordinate;
     if (handler) {
         void (^handlerCopy)(NSDictionary *, NSError *) = [handler copy];
         [coordinateBlockStack addObject:handlerCopy];
@@ -101,7 +98,6 @@
 - (void)getCityWithBlock:(void (^)(NSDictionary *, NSError *))handler
 {
     if(APLM_DEBUG)NSLog(@"City requested");
-    mode = APLMcity;
     if (handler) {
         void (^handlerCopy)(NSDictionary *,NSError *) = [handler copy];
         [cityBlockStack addObject:handlerCopy];
@@ -142,7 +138,6 @@
 - (void)getCityAndStateOfCoordinate:(CLLocation*)location callback:(void (^)(NSDictionary *, NSError *))handler
 {
     if(APLM_DEBUG)NSLog(@"Convert to city requested");
-    mode = APLMcity;
     if (handler) {
         void (^handlerCopy)(NSDictionary *,NSError *) = [handler copy];
         [cityBlockStack addObject:handlerCopy];
@@ -195,7 +190,7 @@
         if ([dict objectForKey:@"dt"]) {
             NSDate *date = [dict objectForKey:@"dt"];
             float timeSinceLastCheck = [[NSDate date] timeIntervalSinceDate:date];
-            if (timeSinceLastCheck < geopointLocationCacheTime) {
+            if (timeSinceLastCheck <= cacheInterval) {
                 return YES;
             }
         }
@@ -218,14 +213,6 @@
     [dict removeObjectForKey:@"lng"];
     [dict setObject:newLocation forKey:@"CLLocation"];
     [self coordinateQueryCompleted:dict withError:nil];
-    
-    if (mode == APLMcoordinate) {
-        return;
-    }
-    return;
-    [self privateGetCityAndStateOfCoordinate:newLocation callback:^(NSDictionary *response, NSError *error) {
-        [self cityQueryCompleted:response withError:error];
-    }];
 }
 
 -(void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error

@@ -12,10 +12,6 @@
  Author: Andrew Park
  */
 
-typedef enum{
-    APLMcoordinate,
-    APLMcity
-} APLMmode;
 #import <Foundation/Foundation.h>
 
 #import <CoreLocation/CoreLocation.h>
@@ -24,7 +20,7 @@ typedef enum{
 @interface APLocationManager : NSObject<CLLocationManagerDelegate>
 
 @property (assign) BOOL enableCache;
-@property (assign) int geopointLocationCacheTime;//default cache time is 5*60 seconds
+@property (assign) int cacheInterval;//default cache time is 5*60 seconds
 
 + (APLocationManager *)sharedInstance;
 /*
